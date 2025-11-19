@@ -1,0 +1,34 @@
+假如做多被套，我可以反复开做空的网格来获利。如果有做多被套的仓位，做空的初始仓位可以给得大一点。
+
+我的主要目标是借鉴思想，做一个改进版。目标用户是我自己。性能要求：同一个账户可以同时运行多个交易对，即共享保证金。我还有一些想法：
+* 无脑的马丁网格很容易被单边行情套住或爆仓，所以我希望改进成趋势马丁网格。首先以分钟级别的k的均线系统来判断上涨还是下跌趋势，然后以分钟CCI指标来确定超买超卖区域。具体：在上涨趋势中，进入超卖区域开网格做多；在下跌趋势中，开网格做空。
+* 单个币对成交的机会比较少，因为要等待超买超卖区域。所以，为了资金的利用率，可以同一个账户开多个币对。
+* 如果某个交易对被套住，则开反向网格来对冲，等待解套。
+
+还有一点想法：做空和做多的参数配置要独立开来，因为做空比较危险。另外，当市场波动比较大的时刻，可以动态调整网格的大小。你可以借鉴passivbot的配置：
+{
+    "config_name": "lev10x_conservative",
+    "logging_level": 0,
+    "ddown_factor": 0.5,
+    "qty_pct": 0.005,
+    "leverage": 10,
+    "n_close_orders": 1,
+    "grid_spacing": 0.009,
+    "pos_margin_grid_coeff": 5,
+    "volatility_grid_coeff": 500,
+    "volatility_qty_coeff": 20.0,
+    "min_markup": 0.006,
+    "markup_range": 0.01,
+    "do_long": false,
+    "do_shrt": false,
+    "ema_span": 1000,
+    "ema_spread": 0.001,
+    "stop_loss_liq_diff": 0.0,
+    "stop_loss_pos_pct": 0.0,
+    "pbr_limit": 20.0
+}
+
+
+基于ATR的基础间距
+    # ==========================================
+    base_spacing_atr = atr_pct * atr_multiplier

@@ -1,0 +1,220 @@
+# config/strategy.yaml
+# PassivbotJL 策略配置文件
+
+strategy:
+  name: "Trend Following Martingale Grid"
+  version: "0.1.0"
+
+# ============================================================================
+# 趋势检测配置
+# ============================================================================
+trend:
+  timeframe_primary: "15m"      # 主趋势时间框架
+  timeframe_secondary: "5m"     # 次级确认时间框架
+  ema_fast_period: 20           # 快速EMA周期
+  ema_slow_period: 60           # 慢速EMA周期
+  trend_threshold: 0.001        # 0.1% EMA分离度才算趋势
+  adx_period: 14
+  adx_threshold: 20             # ADX>20才交易
+  confirmation_required: true   # 需要双重确认
+
+# ============================================================================
+# CCI指标配置
+# ============================================================================
+cci:
+  period: 14
+  timeframe: "5m"
+  
+  # 做多信号（上涨趋势中的超卖）
+  long_thresholds: [-50, -100, -150]
+  long_position_sizes: [0.3, 0.6, 1.0]  # 对应的仓位比例
+  
+  # 做空信号（下跌趋势中的超买）
+  short_thresholds: [50, 100, 150]
+  short_position_sizes: [0.2, 0.4, 0.7]
+
+# ============================================================================
+# 做多配置
+# ============================================================================
+long:
+  enabled: true
+  leverage: 5
+  wallet_exposure_limit: 0.8    # 最大敞口80%
+  
+  grid:
+    base_spacing: 0.015         # 1.5% 基础间距
+    min_spacing: 0.008          # 0.8% 最小
+    max_spacing: 0.05           # 5% 最大
+    
+    # ATR动态间距
+    use_atr_spacing: true
+    atr_period: 14
+    atr_timeframe: "5m"
+    atr_multiplier_major: 1.8   # BTC/ETH
+    atr_multiplier_alt: 1.3     # 其他币
+    
+    # 马丁格尔
+    martingale:
+      enabled: true
+      ddown_factor: 1.5         # 加倍系数
+      max_levels: 7             # 最多7层
+    
+    # 仓位调整
+    use_position_adjustment: true
+    position_spacing_factor: 2.0
+    volatility_qty_coeff: 20.0
+  
+  take_profit:
+    min_markup: 0.01            # 1% 最小止盈
+    markup_range: 0.015         # 1.5% 止盈范围
+    n_close_orders: 5
+    
+    # 分批止盈
+    partial_exits:
+      - qty_pct: 0.2
+        profit_pct: 0.8
+      - qty_pct: 0.3
+        profit_pct: 1.2
+      - qty_pct: 0.3
+        profit_pct: 1.8
+      - qty_pct: 0.2
+        profit_pct: 2.5
+    
+    # 追踪止盈
+    trailing_stop_enabled: true
+    trailing_activation_pct: 3.0
+    trailing_callback_pct: 1.5
+  
+  risk:
+    stop_loss_pct: 12.0         # 12% 止损
+    max_hold_hours: 72
+    liquidation_warning_distance: 35.0
+    liquidation_danger_distance: 25.0
+    liquidation_critical_distance: 15.0
+    max_position_value: 5000.0  # 单仓位最大$5000
+
+# ============================================================================
+# 做空配置（更保守）
+# ============================================================================
+short:
+  enabled: false                # 初期建议关闭
+  leverage: 3
+  wallet_exposure_limit: 0.5
+  
+  grid:
+    base_spacing: 0.02
+    min_spacing: 0.012
+    max_spacing: 0.06
+    
+    use_atr_spacing: true
+    atr_period: 14
+    atr_timeframe: "5m"
+    atr_multiplier_major: 2.0
+    atr_multiplier_alt: 1.5
+    
+    martingale:
+      enabled: true
+      ddown_factor: 1.3         # 更小的加倍系数
+      max_levels: 5             # 更少的层数
+    
+    use_position_adjustment: true
+    position_spacing_factor: 2.5
+    volatility_qty_coeff: 25.0
+  
+  take_profit:
+    min_markup: 0.008           # 更快止盈
+    markup_range: 0.01
+    n_close_orders: 3
+    
+    trailing_stop_enabled: true
+    trailing_activation_pct: 2.0
+    trailing_callback_pct: 1.0
+  
+  risk:
+    stop_loss_pct: 10.0         # 更紧的止损
+    max_hold_hours: 48
+    liquidation_warning_distance: 40.0
+    liquidation_danger_distance: 30.0
+    liquidation_critical_distance: 20.0
+    max_position_value: 3000.0
+
+# ============================================================================
+# 对冲配置
+# ============================================================================
+hedge:
+  enabled: true
+  
+  activation:
+    loss_threshold: 8.0         # 亏损8%时激活
+    liquidation_distance: 30.0  # 距离清算30%时激活
+    max_hold_hours: 48          # 持仓48小时激活
+  
+  grid:
+    initial_size_ratio: 0.4     # 初始对冲40%
+    max_exposure_ratio: 0.8     # 最大对冲80%
+    spacing: 0.012              # 1.2% 间距
+    profit_target: 0.008        # 0.8% 止盈
+    asymmetry_ratio: 0.7        # 70%下方，30%上方
+  
+  profit_recycling:
+    enabled: true
+    ratio: 0.8                  # 80%利润用于减少主仓位
+
+# ============================================================================
+# 投资组合配置
+# ============================================================================
+portfolio:
+  max_symbols: 3                # 最多3个交易对
+  allocation_method: "equal"    # equal 或 volatility_adjusted
+  reserved_capital_pct: 50      # 保留50%资金
+  
+  symbol_selection:
+    universe:                   # 可选交易对
+      - "BTCUSDT"
+      - "ETHUSDT"
+      - "BNBUSDT"
+      - "SOLUSDT"
+      - "ADAUSDT"
+    
+    min_volatility: 2.0         # 最小波动率2%
+    max_volatility: 6.0         # 最大波动率6%
+    min_volume_usd: 10000000    # 最小日交易量$1000万
+    max_correlation: 0.7        # 最大相关性0.7
+    rebalance_hours: 24         # 24小时重新选择
+
+# ============================================================================
+# 交易所配置
+# ============================================================================
+exchange:
+  name: "binance"
+  testnet: true                 # 使用测试网（推荐先测试）
+  
+  # API密钥配置（两种方式）:
+  # 方式1: 直接在这里配置（不推荐，安全风险）
+  api_key: "mWfPr9pvH76aicvKLCPQXg5TQFUGifldH8oMXzRzbZog35y8194c2h6TKbqIo1I2"                 # 建议使用环境变量
+  api_secret: "l8AwiMg667XaKiuSGUdt09tbTqCUJwlYQ7aTje8NrULQKxJEGHSZqPT6p9IbHhBy"              # export EXCHANGE_API_KEY=xxx
+  
+  
+  # 方式2: 使用环境变量（推荐）
+  # 在终端执行:
+  # export EXCHANGE_API_KEY="your_api_key"
+  # export EXCHANGE_API_SECRET="your_api_secret"
+  
+  rate_limit_per_minute: 1200
+  order_timeout_seconds: 30
+  max_retries: 3
+
+
+# ============================================================================
+# 执行配置
+# ============================================================================
+execution:
+  loop_interval_seconds: 60     # 主循环每60秒运行一次
+
+# ============================================================================
+# 通知配置
+# ============================================================================
+notifications:
+  telegram_enabled: false
+  telegram_token: ""
+  telegram_chat_id: ""

@@ -1,0 +1,27 @@
+# scripts/passivbot.service
+
+[Unit]
+Description=PassivbotJL Trading Bot
+After=network.target
+
+[Service]
+Type=simple
+User=your_username
+WorkingDirectory=/path/to/PassivbotJL
+Environment="JULIA_DEPOT_PATH=/home/your_username/.julia"
+Environment="EXCHANGE_API_KEY=your_api_key"
+Environment="EXCHANGE_API_SECRET=your_api_secret"
+
+# 启动命令
+ExecStart=/usr/bin/julia --project=/path/to/PassivbotJL /path/to/PassivbotJL/scripts/run_bot.jl
+
+# 重启策略
+Restart=on-failure
+RestartSec=10
+
+# 日志
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
